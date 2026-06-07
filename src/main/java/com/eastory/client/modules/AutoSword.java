@@ -4,7 +4,7 @@ import com.eastory.client.*;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 
-public class AutoSword extends Module {
+public class AutoSword extends ClientModule {
     private int lastSlot = -1;
 
     public AutoSword() { super("AutoSword"); }
