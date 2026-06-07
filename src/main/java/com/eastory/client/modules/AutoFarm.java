@@ -4,7 +4,6 @@ import com.eastory.client.*;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.*;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
@@ -22,8 +21,6 @@ public class AutoFarm extends ClientModule {
     private final MinecraftClient mc = EastoryClient.mc;
     private Timer actionTimer = new Timer();
     private BlockPos appleDirt, pendingReplant;
-    private boolean cropWalking;
-    private Vec3d cropWalkTarget;
     private long lastSell;
 
     public AutoFarm() { super("AutoFarm"); }
@@ -72,19 +69,15 @@ public class AutoFarm extends ClientModule {
     private void handleCrop() {
         PlayerEntity p = mc.player;
         if (isInventoryFull() && hasCropItems()) { depositCrops(); return; }
-        if (pickupNearbyItems()) return;
         if (tryReplant()) return;
         if (tryBoneMeal()) return;
         BlockPos target = findReadyCrop();
         if (target == null) { tryReplantNearPlayer(); return; }
-        if (!isInRange(target)) walkTo(target.toCenterPos(), 1.0);
-        else {
-            stopWalking();
-            if (actionTimer.elapsed(80)) {
-                pendingReplant = target.toImmutable();
-                breakBlock(target);
-                actionTimer.reset();
-            }
+        if (!isInRange(target)) return;
+        if (actionTimer.elapsed(80)) {
+            pendingReplant = target.toImmutable();
+            breakBlock(target);
+            actionTimer.reset();
         }
     }
 
@@ -158,36 +151,17 @@ public class AutoFarm extends ClientModule {
         ChestBlockEntity chest = findBlockEntity(ChestBlockEntity.class, 5);
         if (chest != null) {
             BlockPos pos = chest.getPos();
-            if (!isInRange(pos)) walkTo(pos.toCenterPos(), 1.0);
-            else {
-                mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, new BlockHitResult(pos.toCenterPos(), Direction.UP, pos, false));
-                if (actionTimer.elapsed(500)) { mc.player.closeHandledScreen(); actionTimer.reset(); }
-            }
+            if (!isInRange(pos)) return;
+            mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, new BlockHitResult(pos.toCenterPos(), Direction.UP, pos, false));
+            if (actionTimer.elapsed(500)) { mc.player.closeHandledScreen(); actionTimer.reset(); }
         }
-    }
-
-    private boolean pickupNearbyItems() {
-        List<ItemEntity> items = mc.world.getEntitiesByClass(ItemEntity.class, mc.player.getBoundingBox().expand(6),
-                e -> isCropItem(e.getStack().getItem()));
-        if (items.isEmpty()) return false;
-        ItemEntity nearest = items.stream().min(Comparator.comparingDouble(e -> e.squaredDistanceTo(mc.player))).get();
-        Vec3d pos = nearest.getPos();
-        if (nearest.squaredDistanceTo(mc.player) > 2.25) walkTo(pos, 2.25);
-        else stopWalking();
-        return true;
-    }
-
-    private boolean isCropItem(Item item) {
-        return item == Items.WHEAT || item == Items.CARROT || item == Items.POTATO || item == Items.BEETROOT
-                || item == Items.NETHER_WART || item == Items.SUGAR_CANE;
     }
 
     private boolean tryReplant() {
         if (pendingReplant == null) return false;
         Item seed = Items.WHEAT_SEEDS;
         BlockPos target = pendingReplant;
-        if (!isInRange(target)) { walkTo(target.toCenterPos(), 1.0); return true; }
-        stopWalking();
+        if (!isInRange(target)) { pendingReplant = null; return false; }
         if (!mc.world.getBlockState(target).isAir()) { pendingReplant = null; return false; }
         if (actionTimer.elapsed(80)) {
             ensureHotbar(seed);
@@ -207,7 +181,7 @@ public class AutoFarm extends ClientModule {
             for (int z = -24; z <= 24; z++) {
                 for (int y = -3; y <= 3; y++) {
                     BlockPos pos = origin.add(x, y, z);
-                    if (isPlantable(pos, seed)) {
+                    if (isPlantable(pos, seed) && isInRange(pos)) {
                         double d = pos.getSquaredDistance(mc.player.getPos());
                         if (d < bestDist) { bestDist = d; best = pos; }
                     }
@@ -215,8 +189,9 @@ public class AutoFarm extends ClientModule {
             }
         }
         if (best != null) {
-            if (!isInRange(best)) walkTo(best.toCenterPos(), 1.0);
-            else { stopWalking(); ensureHotbar(seed); useBlock(best.down(), Direction.UP); actionTimer.reset(); }
+            ensureHotbar(seed);
+            useBlock(best.down(), Direction.UP);
+            actionTimer.reset();
         }
     }
 
@@ -234,7 +209,7 @@ public class AutoFarm extends ClientModule {
             for (int z = -24; z <= 24; z++) {
                 for (int y = -3; y <= 3; y++) {
                     BlockPos pos = origin.add(x, y, z);
-                    if (isCropReady(pos)) {
+                    if (isCropReady(pos) && isInRange(pos)) {
                         double d = pos.getSquaredDistance(mc.player.getPos());
                         if (d < bestDist) { bestDist = d; best = pos; }
                     }
@@ -259,9 +234,7 @@ public class AutoFarm extends ClientModule {
     private boolean tryBoneMeal() {
         if (!hasItem(Items.BONE_MEAL)) return false;
         BlockPos target = findBoneMealTarget();
-        if (target == null) return false;
-        if (!isInRange(target)) { walkTo(target.toCenterPos(), 1.0); return true; }
-        stopWalking();
+        if (target == null || !isInRange(target)) return false;
         if (actionTimer.elapsed(35)) {
             ensureHotbar(Items.BONE_MEAL);
             useBlock(target, Direction.UP);
@@ -278,10 +251,12 @@ public class AutoFarm extends ClientModule {
             for (int z = -24; z <= 24; z++) {
                 for (int y = -3; y <= 3; y++) {
                     BlockPos pos = origin.add(x, y, z);
-                    BlockState state = mc.world.getBlockState(pos);
-                    if (state.getBlock() instanceof CropBlock crop && crop.getAge(state) < CropBlock.MAX_AGE) {
-                        double d = pos.getSquaredDistance(mc.player.getPos());
-                        if (d < bestDist) { bestDist = d; best = pos; }
+                    if (isInRange(pos)) {
+                        BlockState state = mc.world.getBlockState(pos);
+                        if (state.getBlock() instanceof CropBlock crop && crop.getAge(state) < CropBlock.MAX_AGE) {
+                            double d = pos.getSquaredDistance(mc.player.getPos());
+                            if (d < bestDist) { bestDist = d; best = pos; }
+                        }
                     }
                 }
             }
@@ -295,26 +270,6 @@ public class AutoFarm extends ClientModule {
 
     private boolean isInRange(BlockPos pos) {
         return mc.player.squaredDistanceTo(pos.toCenterPos()) <= 6.25;
-    }
-
-    private void walkTo(Vec3d target, double stopRangeSq) {
-        Vec3d delta = target.subtract(mc.player.getPos());
-        float yaw = (float) Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90F;
-        mc.player.setYaw(yaw);
-        mc.player.setPitch(0);
-        mc.options.forwardKey.setPressed(true);
-        mc.options.sprintKey.setPressed(true);
-        mc.options.jumpKey.setPressed(mc.player.horizontalCollision && mc.player.isOnGround());
-        cropWalkTarget = target;
-        cropWalking = true;
-    }
-
-    private void stopWalking() {
-        mc.options.forwardKey.setPressed(false);
-        mc.options.sprintKey.setPressed(false);
-        mc.options.jumpKey.setPressed(false);
-        cropWalkTarget = null;
-        cropWalking = false;
     }
 
     private <T extends BlockEntity> T findBlockEntity(Class<T> clazz, double range) {
