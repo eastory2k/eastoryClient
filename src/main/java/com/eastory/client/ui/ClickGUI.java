@@ -4,6 +4,7 @@ import com.eastory.client.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 import java.util.*;
 
@@ -89,7 +90,10 @@ public class ClickGUI {
         }
     }
 
-    public void render(DrawContext c, float delta) {
+    // ЕДИНСТВЕННОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ
+    public void render(DrawContext c, RenderTickCounter tickCounter) {
+        float delta = tickCounter.getTickDelta(true); // если понадобится delta, но у нас не используется
+
         if (!open) return;
 
         int mx = (int)(mc.mouse.getX() * mc.getWindow().getScaledWidth() / mc.getWindow().getWidth());
