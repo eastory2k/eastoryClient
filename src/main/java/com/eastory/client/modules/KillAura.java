@@ -11,7 +11,7 @@ import net.minecraft.util.math.*;
 import net.minecraft.world.RaycastContext;
 import java.util.Random;
 
-public class KillAura extends Module {
+public class KillAura extends ClientModule {
 
     private final Random random = new Random();
     private int attackCooldown;
