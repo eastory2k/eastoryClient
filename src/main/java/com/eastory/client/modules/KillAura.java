@@ -39,7 +39,7 @@ public class KillAura extends ClientModule {
         LivingEntity best = null;
         double bestDist = MAX_AIM_DISTANCE;
 
-        for (Entity e : p.getWorld().getEntities()) {
+        for (Entity e : p.getWorld().iterateEntities()) {
             if (!(e instanceof LivingEntity) || e == p || !e.isAlive()) continue;
             double d = p.distanceTo(e);
             if (d > MAX_AIM_DISTANCE) continue;
