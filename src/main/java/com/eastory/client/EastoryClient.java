@@ -13,7 +13,7 @@ public class EastoryClient implements ClientModInitializer {
 
     public static MinecraftClient mc;
     public static boolean guiHidden;
-    private static Module[] modules;
+    private static ClientModule[] modules;
     private static HudRenderer hud;
     private static boolean rshiftWasPressed;
 
@@ -21,7 +21,7 @@ public class EastoryClient implements ClientModInitializer {
     public void onInitializeClient() {
         mc = MinecraftClient.getInstance();
 
-        modules = new Module[] {
+        modules = new ClientModule[] {
             new KillAura(),
             new AimAssist(),
             new TriggerBot(),
@@ -37,7 +37,7 @@ public class EastoryClient implements ClientModInitializer {
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
 
-            for (Module m : modules) {
+            for (ClientModule m : modules) {
                 if (m.enabled) m.onTick();
             }
 
