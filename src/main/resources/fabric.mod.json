@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "eastory",
+  "version": "${version}",
+  "name": "Eastory Client",
+  "description": "Legit client with advanced features",
+  "authors": ["Eastory"],
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.eastory.client.EastoryClient"
+    ]
+  },
+  "mixins": [
+    "eastory.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.1",
+    "java": ">=21"
+  }
+}
