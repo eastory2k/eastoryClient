@@ -10,7 +10,8 @@ public class FastPlace extends ClientModule {
     public void onTick() {
         if (EastoryClient.mc.player == null) return;
         if (EastoryClient.mc.options.useKey.isPressed()) {
-            ((MinecraftClientMixin) EastoryClient.mc).setCooldown(0);
+            // Вызываем метод setCooldown через Mixin
+            ((MinecraftClientMixin) (Object) EastoryClient.mc).setCooldown(0);
         }
     }
 }
