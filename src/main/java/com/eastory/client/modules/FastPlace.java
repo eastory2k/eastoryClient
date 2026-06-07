@@ -3,7 +3,7 @@ package com.eastory.client.modules;
 import com.eastory.client.*;
 import com.eastory.client.mixin.MinecraftClientMixin;
 
-public class FastPlace extends Module {
+public class FastPlace extends ClientModule {
     public FastPlace() { super("FastPlace"); }
 
     @Override
