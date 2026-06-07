@@ -1,9 +1,9 @@
 package com.eastory.client.bypass;
 
-import com.eastory.client.Module;
+import com.eastory.client.*;
 import net.minecraft.client.MinecraftClient;
 
-public class UnhookModule extends Module {
+public class UnhookModule extends ClientModule {
     private boolean done;
     public UnhookModule() { super("Unhook"); }
 
