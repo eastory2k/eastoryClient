@@ -44,7 +44,11 @@ public class KillAura extends ClientModule {
             double d = p.distanceTo(e);
             if (d > MAX_AIM_DISTANCE) continue;
 
-            if (!isTargetReachable((LivingEntity) e, d)) continue;
+            Vec3d start = p.getEyePos();
+            Vec3d end = e.getPos().add(0, e.getHeight() / 2, 0);
+            HitResult hit = p.getWorld().raycast(new RaycastContext(start, end,
+                    RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, p));
+            if (hit.getType() != HitResult.Type.MISS && hit.squaredDistanceTo(p) < d * d) continue;
 
             if (best == null || d < bestDist) {
                 best = (LivingEntity) e;
@@ -52,15 +56,6 @@ public class KillAura extends ClientModule {
             }
         }
         return best;
-    }
-
-    private boolean isTargetReachable(LivingEntity target, double distance) {
-        var p = EastoryClient.mc.player;
-        Vec3d start = p.getEyePos();
-        Vec3d end = target.getPos().add(0, target.getHeight() / 2, 0);
-        HitResult hit = p.getWorld().raycast(new RaycastContext(start, end,
-                RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, p));
-        return hit.getType() == HitResult.Type.MISS || hit.squaredDistanceTo(p) >= distance * distance;
     }
 
     private void rotateToTarget(LivingEntity target) {
