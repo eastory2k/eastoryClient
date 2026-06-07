@@ -1,12 +1,11 @@
 package com.eastory.client.bypass;
 
-import com.eastory.client.Module;
-import com.eastory.client.EastoryClient;
+import com.eastory.client.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.MathHelper;
 import java.util.Random;
 
-public class AnticheatBypass extends Module {
+public class AnticheatBypass extends ClientModule {
     private final Random random = new Random();
     private int tickCounter;
     private float yawNoise, pitchNoise;
