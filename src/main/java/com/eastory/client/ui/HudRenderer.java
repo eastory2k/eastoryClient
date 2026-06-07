@@ -14,12 +14,13 @@ public class HudRenderer {
     private static final int BG = 0xCC0D0D0D, ACCENT = 0xFF6BB5FF;
     private static final int GREEN = 0xFF55FF55, RED = 0xFFFF5555, WHITE = 0xFFFFFFFF;
     private final SimpleDateFormat tf = new SimpleDateFormat("HH:mm:ss");
+
     private float fps;
     private long last;
     private int idx;
     private final float[] buf = new float[10];
 
-    public void render(DrawContext c, TextRenderer f, Module[] modules) {
+    public void render(DrawContext c, TextRenderer f, ClientModule[] modules) {
         var p = EastoryClient.mc.player;
         var w = EastoryClient.mc.world;
         if (p == null || w == null) return;
@@ -42,7 +43,7 @@ public class HudRenderer {
 
         int y = 12;
         c.drawTextWithShadow(f, "EASTORY", 5 + lw / 2 - f.getWidth("EASTORY") / 2, y, ACCENT); y += 13;
-        for (Module m : modules) {
+        for (ClientModule m : modules) {
             int col = m.enabled ? GREEN : RED;
             c.drawTextWithShadow(f, (m.enabled ? "● " : "○ ") + m.name, 12, y, col);
             y += 13;
