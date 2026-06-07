@@ -76,7 +76,7 @@ public class AimAssist extends ClientModule {
         Entity best = null;
         double bestDist = 5.0;
 
-        for (Entity e : p.getWorld().getEntities()) {
+        for (Entity e : p.getWorld().getOtherEntities(p, p.getBoundingBox().expand(5.0))) {
             if (!(e instanceof PlayerEntity) || e == p || !e.isAlive()) continue;
             double d = p.distanceTo(e);
             Vec3d look = p.getRotationVector();
