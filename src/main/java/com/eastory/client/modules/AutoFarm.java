@@ -2,11 +2,12 @@ package com.eastory.client.modules;
 
 import com.eastory.client.*;
 import net.minecraft.block.*;
-import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.block.entity.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.*;
@@ -100,7 +101,10 @@ public class AutoFarm extends ClientModule {
 
     private BlockPos findTreeBlock(BlockPos root) {
         return BlockPos.stream(root.add(-4, 0, -4), root.add(4, 8, 4))
-                .filter(p -> mc.world.getBlockState(p).isIn(BlockTags.LOGS) || mc.world.getBlockState(p).isIn(BlockTags.LEAVES))
+                .filter(p -> {
+                    BlockState state = mc.world.getBlockState(p);
+                    return state.isIn(BlockTags.LOGS) || state.isIn(BlockTags.LEAVES);
+                })
                 .min(Comparator.comparingDouble(p -> p.getSquaredDistance(mc.player.getPos())))
                 .orElse(null);
     }
