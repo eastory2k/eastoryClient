@@ -3,7 +3,6 @@ package com.eastory.client.modules;
 import com.eastory.client.*;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.*;
@@ -24,8 +23,7 @@ public class KillAura extends ClientModule {
     @Override
     public void onTick() {
         var p = EastoryClient.mc.player;
-        var w = EastoryClient.mc.world;
-        if (p == null || w == null) return;
+        if (p == null || p.isDead()) return;
 
         LivingEntity target = findTarget();
         if (target == null) return;
@@ -48,12 +46,9 @@ public class KillAura extends ClientModule {
             Vec3d end = e.getPos().add(0, e.getHeight() / 2, 0);
             HitResult hit = p.getWorld().raycast(new RaycastContext(start, end,
                     RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, p));
-            if (hit.getType() != HitResult.Type.MISS && hit.squaredDistanceTo(p) < d * d) continue;
+            if (hit.getType() != HitResult.Type.MISS) continue;
 
-            if (best == null || d < bestDist) {
-                best = (LivingEntity) e;
-                bestDist = d;
-            }
+            if (best == null || d < bestDist) { best = (LivingEntity) e; bestDist = d; }
         }
         return best;
     }
@@ -95,22 +90,15 @@ public class KillAura extends ClientModule {
     }
 
     private boolean shouldAttack(LivingEntity target) {
-        if (attackCooldown > 0) {
-            attackCooldown--;
-            return false;
-        }
-
+        if (attackCooldown > 0) { attackCooldown--; return false; }
         var p = EastoryClient.mc.player;
-        float dist = p.distanceTo(target);
-        if (dist > MAX_ATTACK_DISTANCE) return false;
-
+        if (p.distanceTo(target) > MAX_ATTACK_DISTANCE) return false;
         if (p.getAttackCooldownProgress(0.5f) < 0.9f) return false;
 
         long now = System.currentTimeMillis();
-        int cps = 8 + random.nextInt(7);
-        long delay = 1000L / cps;
+        float cps = Config.get("TriggerCPS");
+        long delay = (cps > 0) ? (long)(1000L / cps) : 200;
         if (now - lastAttackTime < delay) return false;
-
         return true;
     }
 
@@ -137,7 +125,7 @@ public class KillAura extends ClientModule {
         }
 
         lastAttackTime = System.currentTimeMillis();
-        attackCooldown = 20 / (8 + random.nextInt(7));
+        attackCooldown = 20 / (int)Math.max(1, Config.get("TriggerCPS"));
     }
 
     private boolean shouldAutoMace() {
@@ -147,24 +135,7 @@ public class KillAura extends ClientModule {
 
     private int findMaceSlot() {
         var p = EastoryClient.mc.player;
-        for (int i = 0; i < 9; i++) {
-            if (p.getInventory().getStack(i).isOf(Items.MACE)) return i;
-        }
-        for (int i = 9; i < 36; i++) {
-            if (p.getInventory().getStack(i).isOf(Items.MACE)) {
-                int emptySlot = -1;
-                for (int j = 0; j < 9; j++) {
-                    if (p.getInventory().getStack(j).isEmpty()) { emptySlot = j; break; }
-                }
-                if (emptySlot != -1) {
-                    var inv = p.getInventory();
-                    var stack = inv.getStack(i);
-                    inv.setStack(emptySlot, stack);
-                    inv.setStack(i, ItemStack.EMPTY);
-                    return emptySlot;
-                }
-            }
-        }
+        for (int i = 0; i < 9; i++) if (p.getInventory().getStack(i).isOf(Items.MACE)) return i;
         return -1;
     }
 }
