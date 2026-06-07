@@ -13,163 +13,163 @@ import java.util.Random;
 
 public class KillAura extends Module {
 
-    private final Random random = new Random();
-    private int attackCooldown;
-    private long lastAttackTime;
-    private static final float MAX_ATTACK_DISTANCE = 3.0f;
-    private static final float MAX_AIM_DISTANCE = 5.0f;
+    private final Random random = new Random();
+    private int attackCooldown;
+    private long lastAttackTime;
+    private static final float MAX_ATTACK_DISTANCE = 3.0f;
+    private static final float MAX_AIM_DISTANCE = 5.0f;
 
-    public KillAura() { super("KillAura"); }
+    public KillAura() { super("KillAura"); }
 
-    @Override
-    public void onTick() {
-        var p = EastoryClient.mc.player;
-        var w = EastoryClient.mc.world;
-        if (p == null || w == null) return;
+    @Override
+    public void onTick() {
+        var p = EastoryClient.mc.player;
+        var w = EastoryClient.mc.world;
+        if (p == null || w == null) return;
 
-        LivingEntity target = findTarget();
-        if (target == null) return;
+        LivingEntity target = findTarget();
+        if (target == null) return;
 
-        rotateToTarget(target);
-        if (shouldAttack(target)) attack(target);
-    }
+        rotateToTarget(target);
+        if (shouldAttack(target)) attack(target);
+    }
 
-    private LivingEntity findTarget() {
-        var p = EastoryClient.mc.player;
-        LivingEntity best = null;
-        double bestDist = MAX_AIM_DISTANCE;
+    private LivingEntity findTarget() {
+        var p = EastoryClient.mc.player;
+        LivingEntity best = null;
+        double bestDist = MAX_AIM_DISTANCE;
 
-        for (Entity e : p.getWorld().getEntities()) {
-            if (!(e instanceof LivingEntity) || e == p || !e.isAlive()) continue;
-            double d = p.distanceTo(e);
-            if (d > MAX_AIM_DISTANCE) continue;
+        for (Entity e : p.getWorld().getEntities()) {
+            if (!(e instanceof LivingEntity) || e == p || !e.isAlive()) continue;
+            double d = p.distanceTo(e);
+            if (d > MAX_AIM_DISTANCE) continue;
 
-            if (!isTargetReachable((LivingEntity) e, d)) continue;
+            if (!isTargetReachable((LivingEntity) e, d)) continue;
 
-            if (best == null || d < bestDist) {
-                best = (LivingEntity) e;
-                bestDist = d;
-            }
-        }
-        return best;
-    }
+            if (best == null || d < bestDist) {
+                best = (LivingEntity) e;
+                bestDist = d;
+            }
+        }
+        return best;
+    }
 
-    private boolean isTargetReachable(LivingEntity target, double distance) {
-        var p = EastoryClient.mc.player;
-        Vec3d start = p.getEyePos();
-        Vec3d end = target.getPos().add(0, target.getHeight() / 2, 0);
-        HitResult hit = p.getWorld().raycast(new RaycastContext(start, end,
-                RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, p));
-        return hit.getType() == HitResult.Type.MISS || hit.squaredDistanceTo(p) >= distance * distance;
-    }
+    private boolean isTargetReachable(LivingEntity target, double distance) {
+        var p = EastoryClient.mc.player;
+        Vec3d start = p.getEyePos();
+        Vec3d end = target.getPos().add(0, target.getHeight() / 2, 0);
+        HitResult hit = p.getWorld().raycast(new RaycastContext(start, end,
+                RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, p));
+        return hit.getType() == HitResult.Type.MISS || hit.squaredDistanceTo(p) >= distance * distance;
+    }
 
-    private void rotateToTarget(LivingEntity target) {
-        var p = EastoryClient.mc.player;
-        Vec3d aim = target.getPos().add(0, target.getHeight() * 0.8, 0);
-        Vec3d eye = p.getEyePos();
-        double dx = aim.x - eye.x;
-        double dy = aim.y - eye.y;
-        double dz = aim.z - eye.z;
-        double h = Math.sqrt(dx * dx + dz * dz);
-        float yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90f;
-        float pitch = (float) -Math.toDegrees(Math.atan2(dy, h));
+    private void rotateToTarget(LivingEntity target) {
+        var p = EastoryClient.mc.player;
+        Vec3d aim = target.getPos().add(0, target.getHeight() * 0.8, 0);
+        Vec3d eye = p.getEyePos();
+        double dx = aim.x - eye.x;
+        double dy = aim.y - eye.y;
+        double dz = aim.z - eye.z;
+        double h = Math.sqrt(dx * dx + dz * dz);
+        float yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90f;
+        float pitch = (float) -Math.toDegrees(Math.atan2(dy, h));
 
-        float gcd = getGCD();
-        float sensitivity = 0.5f;
-        float currentYaw = p.getYaw();
-        float currentPitch = p.getPitch();
-        float deltaYaw = MathHelper.wrapDegrees(yaw - currentYaw);
-        float deltaPitch = pitch - currentPitch;
+        float gcd = getGCD();
+        float sensitivity = 0.5f;
+        float currentYaw = p.getYaw();
+        float currentPitch = p.getPitch();
+        float deltaYaw = MathHelper.wrapDegrees(yaw - currentYaw);
+        float deltaPitch = pitch - currentPitch;
 
-        float maxTurn = 30f;
-        deltaYaw = MathHelper.clamp(deltaYaw, -maxTurn, maxTurn);
-        deltaPitch = MathHelper.clamp(deltaPitch, -maxTurn, maxTurn);
+        float maxTurn = 30f;
+        deltaYaw = MathHelper.clamp(deltaYaw, -maxTurn, maxTurn);
+        deltaPitch = MathHelper.clamp(deltaPitch, -maxTurn, maxTurn);
 
-        float noiseYaw = (random.nextFloat() - 0.5f) * 1.5f;
-        float noisePitch = (random.nextFloat() - 0.5f) * 0.8f;
+        float noiseYaw = (random.nextFloat() - 0.5f) * 1.5f;
+        float noisePitch = (random.nextFloat() - 0.5f) * 0.8f;
 
-        p.setYaw(currentYaw + deltaYaw * sensitivity + noiseYaw);
-        p.setPitch(MathHelper.clamp(currentPitch + deltaPitch * sensitivity + noisePitch, -90f, 90f));
-        p.setHeadYaw(p.getYaw());
-    }
+        p.setYaw(currentYaw + deltaYaw * sensitivity + noiseYaw);
+        p.setPitch(MathHelper.clamp(currentPitch + deltaPitch * sensitivity + noisePitch, -90f, 90f));
+        p.setHeadYaw(p.getYaw());
+    }
 
-    private float getGCD() {
-        double sens = EastoryClient.mc.options.getMouseSensitivity().getValue();
-        double value = sens * 0.6 + 0.2;
-        return (float) (Math.pow(value, 3) * 0.8) * 0.15f;
-    }
+    private float getGCD() {
+        double sens = EastoryClient.mc.options.getMouseSensitivity().getValue();
+        double value = sens * 0.6 + 0.2;
+        return (float) (Math.pow(value, 3) * 0.8) * 0.15f;
+    }
 
-    private boolean shouldAttack(LivingEntity target) {
-        if (attackCooldown > 0) {
-            attackCooldown--;
-            return false;
-        }
+    private boolean shouldAttack(LivingEntity target) {
+        if (attackCooldown > 0) {
+            attackCooldown--;
+            return false;
+        }
 
-        var p = EastoryClient.mc.player;
-        float dist = p.distanceTo(target);
-        if (dist > MAX_ATTACK_DISTANCE) return false;
+        var p = EastoryClient.mc.player;
+        float dist = p.distanceTo(target);
+        if (dist > MAX_ATTACK_DISTANCE) return false;
 
-        if (p.getAttackCooldownProgress(0.5f) < 0.9f) return false;
+        if (p.getAttackCooldownProgress(0.5f) < 0.9f) return false;
 
-        long now = System.currentTimeMillis();
-        int cps = 8 + random.nextInt(7);
-        long delay = 1000L / cps;
-        if (now - lastAttackTime < delay) return false;
+        long now = System.currentTimeMillis();
+        int cps = 8 + random.nextInt(7);
+        long delay = 1000L / cps;
+        if (now - lastAttackTime < delay) return false;
 
-        return true;
-    }
+        return true;
+    }
 
-    private void attack(LivingEntity target) {
-        var p = EastoryClient.mc.player;
-        var im = EastoryClient.mc.interactionManager;
-        if (im == null) return;
+    private void attack(LivingEntity target) {
+        var p = EastoryClient.mc.player;
+        var im = EastoryClient.mc.interactionManager;
+        if (im == null) return;
 
-        if (shouldAutoMace()) {
-            int maceSlot = findMaceSlot();
-            if (maceSlot != -1) {
-                int prevSlot = p.getInventory().selectedSlot;
-                p.getInventory().selectedSlot = maceSlot;
-                im.attackEntity(p, target);
-                p.swingHand(Hand.MAIN_HAND);
-                p.getInventory().selectedSlot = prevSlot;
-            } else {
-                im.attackEntity(p, target);
-                p.swingHand(Hand.MAIN_HAND);
-            }
-        } else {
-            im.attackEntity(p, target);
-            p.swingHand(Hand.MAIN_HAND);
-        }
+        if (shouldAutoMace()) {
+            int maceSlot = findMaceSlot();
+            if (maceSlot != -1) {
+                int prevSlot = p.getInventory().selectedSlot;
+                p.getInventory().selectedSlot = maceSlot;
+                im.attackEntity(p, target);
+                p.swingHand(Hand.MAIN_HAND);
+                p.getInventory().selectedSlot = prevSlot;
+            } else {
+                im.attackEntity(p, target);
+                p.swingHand(Hand.MAIN_HAND);
+            }
+        } else {
+            im.attackEntity(p, target);
+            p.swingHand(Hand.MAIN_HAND);
+        }
 
-        lastAttackTime = System.currentTimeMillis();
-        attackCooldown = 20 / (8 + random.nextInt(7));
-    }
+        lastAttackTime = System.currentTimeMillis();
+        attackCooldown = 20 / (8 + random.nextInt(7));
+    }
 
-    private boolean shouldAutoMace() {
-        var p = EastoryClient.mc.player;
-        return p.fallDistance > 5.0f && !p.isOnGround() && p.getVelocity().y < -0.35;
-    }
+    private boolean shouldAutoMace() {
+        var p = EastoryClient.mc.player;
+        return p.fallDistance > 5.0f && !p.isOnGround() && p.getVelocity().y < -0.35;
+    }
 
-    private int findMaceSlot() {
-        var p = EastoryClient.mc.player;
-        for (int i = 0; i < 9; i++) {
-            if (p.getInventory().getStack(i).isOf(Items.MACE)) return i;
-        }
-        for (int i = 9; i < 36; i++) {
-            if (p.getInventory().getStack(i).isOf(Items.MACE)) {
-                int emptySlot = -1;
-                for (int j = 0; j < 9; j++) {
-                    if (p.getInventory().getStack(j).isEmpty()) { emptySlot = j; break; }
-                }
-                if (emptySlot != -1) {
-                    var inv = p.getInventory();
-                    var stack = inv.getStack(i);
-                    inv.setStack(emptySlot, stack);
-                    inv.setStack(i, ItemStack.EMPTY);
-                    return emptySlot;
-                }
-            }
-        }
-        return -1;
-    }
+    private int findMaceSlot() {
+        var p = EastoryClient.mc.player;
+        for (int i = 0; i < 9; i++) {
+            if (p.getInventory().getStack(i).isOf(Items.MACE)) return i;
+        }
+        for (int i = 9; i < 36; i++) {
+            if (p.getInventory().getStack(i).isOf(Items.MACE)) {
+                int emptySlot = -1;
+                for (int j = 0; j < 9; j++) {
+                    if (p.getInventory().getStack(j).isEmpty()) { emptySlot = j; break; }
+                }
+                if (emptySlot != -1) {
+                    var inv = p.getInventory();
+                    var stack = inv.getStack(i);
+                    inv.setStack(emptySlot, stack);
+                    inv.setStack(i, ItemStack.EMPTY);
+                    return emptySlot;
+                }
+            }
+        }
+        return -1;
+    }
 }
