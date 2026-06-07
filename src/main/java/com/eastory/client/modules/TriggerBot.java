@@ -6,7 +6,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.EntityHitResult;
 
-public class TriggerBot extends Module {
+public class TriggerBot extends ClientModule {
     private int cooldown;
     public TriggerBot() { super("TriggerBot"); }
 
